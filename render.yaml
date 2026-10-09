@@ -3,7 +3,7 @@ services:
     name: streamify-chat
     runtime: node
     plan: free
-    buildCommand: npm run build
+    buildCommand: npm install --include=dev --prefix frontend && npm run build --prefix frontend && npm install --omit=dev --prefix backend
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:

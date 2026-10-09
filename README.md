@@ -62,7 +62,7 @@ To share the app with people on other Wi-Fi networks, deploy it online. The Rend
 
 1. Push this project to a GitHub repository. Do not include `.env` files or credentials.
 2. Create a MongoDB Atlas database and database user. In **Network Access**, allow connections from `0.0.0.0/0` so Render can reach the database; protect the database with a strong, unique database password.
-3. In Render, choose **New > Blueprint**, connect the GitHub repository, and apply the `render.yaml` blueprint.
+3. In Render, choose **New > Blueprint**, connect the GitHub repository, and apply the `render.yaml` blueprint. The blueprint installs the frontend build dependencies, builds the frontend, and installs the backend production dependencies. Future commits pushed to `main` trigger a redeploy.
 4. When prompted, enter the Atlas connection string for `MONGODB_URI`. Replace `<password>` with the database user's password and include the database name `streamify`. Render generates `JWT_SECRET` automatically.
 5. Wait for the Render deployment to finish, then open the `onrender.com` URL shown for the service and share that HTTPS link.
 
