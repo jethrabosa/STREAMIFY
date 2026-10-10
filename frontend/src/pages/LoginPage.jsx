@@ -5,6 +5,21 @@ import { Link } from "react-router-dom";
 import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare } from "lucide-react";
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import toast from "react-hot-toast";
+import { useThemeStore } from "../store/useThemeStore";
+
+const darkThemes = new Set([
+  "dark",
+  "synthwave",
+  "halloween",
+  "forest",
+  "black",
+  "luxury",
+  "dracula",
+  "business",
+  "night",
+  "coffee",
+  "dim",
+]);
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,7 +28,9 @@ const LoginPage = () => {
     password: "",
   });
   const { login, loginWithGoogle, isLoggingIn } = useAuthStore();
+  const theme = useThemeStore((state) => state.theme);
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const googleButtonTheme = darkThemes.has(theme) ? "filled_black" : "outline";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,50 +55,6 @@ const LoginPage = () => {
               <p className="text-base-content/60">Sign in to your account</p>
             </div>
           </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-center">
-              {googleClientId ? (
-                <GoogleOAuthProvider clientId={googleClientId}>
-                  <GoogleLogin
-                    onSuccess={({ credential }) => {
-                      if (credential) {
-                        loginWithGoogle(credential);
-                      } else {
-                        toast.error("Google did not return a sign-in credential. Please try again.");
-                      }
-                    }}
-                    onError={() => toast.error("Google sign-in failed. Please try again.")}
-                    text="continue_with"
-                    theme="outline"
-                    size="large"
-                    shape="rectangular"
-                    width={Math.min(400, window.innerWidth - 48)}
-                  />
-                </GoogleOAuthProvider>
-              ) : (
-                <button
-                  type="button"
-                  className="btn h-16 w-full border-2 border-[#202124] bg-[#f1f0ec] text-base-content hover:bg-base-200"
-                  onClick={() => toast.error("Set VITE_GOOGLE_CLIENT_ID in frontend/.env to enable Google sign-in.")}
-                >
-                  <svg className="h-6 w-6" viewBox="0 0 48 48" aria-hidden="true">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z" />
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.91c-.58 2.96-2.26 5.48-4.76 7.18l7.73 6C44.39 38.01 46.98 31.89 46.98 24.55Z" />
-                    <path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.88.93 7.55 2.56 10.78l7.97-6.19Z" />
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.8l-7.73-6c-2.14 1.45-4.89 2.3-8.17 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z" />
-                  </svg>
-                  Continue with Google
-                </button>
-              )}
-            </div>
-            <p className="text-center text-xs text-base-content/60">
-              Choose a different Google account in Google&apos;s account picker. Your Streamify account is created
-              automatically the first time you sign in.
-            </p>
-          </div>
-
-          <div className="divider my-1 text-xs text-base-content/50">OR</div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -143,6 +116,50 @@ const LoginPage = () => {
               )}
             </button>
           </form>
+
+          <div className="divider my-1 text-xs text-base-content/50">OR</div>
+
+          <div className="space-y-2">
+            <div className="flex justify-center">
+              {googleClientId ? (
+                <GoogleOAuthProvider clientId={googleClientId}>
+                  <GoogleLogin
+                    onSuccess={({ credential }) => {
+                      if (credential) {
+                        loginWithGoogle(credential);
+                      } else {
+                        toast.error("Google did not return a sign-in credential. Please try again.");
+                      }
+                    }}
+                    onError={() => toast.error("Google sign-in failed. Please try again.")}
+                    text="continue_with"
+                    theme={googleButtonTheme}
+                    size="large"
+                    shape="rectangular"
+                    width={Math.min(400, window.innerWidth - 48)}
+                  />
+                </GoogleOAuthProvider>
+              ) : (
+                <button
+                  type="button"
+                  className="btn h-16 w-full border border-base-300 bg-base-100 text-base-content hover:bg-base-200"
+                  onClick={() => toast.error("Set VITE_GOOGLE_CLIENT_ID in frontend/.env to enable Google sign-in.")}
+                >
+                  <svg className="h-6 w-6" viewBox="0 0 48 48" aria-hidden="true">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z" />
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.91c-.58 2.96-2.26 5.48-4.76 7.18l7.73 6C44.39 38.01 46.98 31.89 46.98 24.55Z" />
+                    <path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.88.93 7.55 2.56 10.78l7.97-6.19Z" />
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.8l-7.73-6c-2.14 1.45-4.89 2.3-8.17 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z" />
+                  </svg>
+                  Continue with Google
+                </button>
+              )}
+            </div>
+            <p className="text-center text-xs text-base-content/60">
+              Choose a different Google account in Google&apos;s account picker. Your Streamify account is created
+              automatically the first time you sign in.
+            </p>
+          </div>
 
           <div className="text-center">
             <p className="text-base-content/60">
