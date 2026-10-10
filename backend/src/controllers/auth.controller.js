@@ -2,9 +2,18 @@ import { generateToken } from "../lib/utils.js";
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import cloudinary, { isCloudinaryConfigured } from "../lib/cloudinary.js";
+import { OAuth2Client } from "google-auth-library";
+
+const googleOAuthClient = new OAuth2Client();
+
+const findUserByEmail = (email) => {
+  const escapedEmail = email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return User.findOne({ email: new RegExp(`^${escapedEmail}$`, "i") });
+};
 
 export const signup = async (req, res) => {
-  const { fullName, email, password } = req.body;
+  const { fullName, password } = req.body;
+  const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
   try {
     if (!fullName || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
@@ -14,7 +23,7 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "Password must be at least 6 characters" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await findUserByEmail(email);
 
     if (user) return res.status(400).json({ message: "Email already exists" });
 
@@ -48,11 +57,12 @@ export const signup = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { password } = req.body;
+  const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
   try {
-    const user = await User.findOne({ email });
+    const user = await findUserByEmail(email);
 
-    if (!user) {
+    if (!user || !user.password) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
@@ -71,6 +81,62 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     console.log("Error in login controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const googleLogin = async (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const { credential } = req.body;
+
+  if (!clientId) {
+    return res.status(503).json({ message: "Google sign-in is not configured on the server" });
+  }
+
+  if (typeof credential !== "string" || !credential) {
+    return res.status(400).json({ message: "Google credential is required" });
+  }
+
+  let payload;
+  try {
+    const ticket = await googleOAuthClient.verifyIdToken({
+      idToken: credential,
+      audience: clientId,
+    });
+    payload = ticket.getPayload();
+  } catch (error) {
+    console.warn("Google sign-in credential verification failed:", error.message);
+    return res.status(401).json({ message: "Unable to verify Google account" });
+  }
+
+  if (!payload?.email || payload.email_verified !== true) {
+    return res.status(401).json({ message: "Google account must have a verified email address" });
+  }
+
+  try {
+    const email = payload.email.trim().toLowerCase();
+    let user = await findUserByEmail(email);
+
+    if (!user) {
+      user = await User.create({
+        email,
+        fullName: payload.name?.trim() || email.split("@")[0],
+        profilePic: payload.picture || "",
+      });
+    } else if (!user.profilePic && payload.picture) {
+      user.profilePic = payload.picture;
+      await user.save();
+    }
+
+    generateToken(user._id, res);
+    res.status(200).json({
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      profilePic: user.profilePic,
+    });
+  } catch (error) {
+    console.error("Error in Google login controller:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };

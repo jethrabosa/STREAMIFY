@@ -48,6 +48,17 @@ Highlights include JWT authentication, real-time messaging, one-to-one video cal
 
 The app clears any saved login session when it starts, so you will be asked to sign in again after reopening or refreshing it. The backend listens on port `5001` by default and does not start until it can connect to MongoDB. If MongoDB is installed as a service but is stopped, start the **MongoDB Server** service from Windows Services.
 
+## Google sign-in
+
+Google sign-in requires a Google OAuth 2.0 **Web application** client ID:
+
+1. Create a web client in the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) and configure its OAuth consent screen.
+2. Add your app's origins under **Authorized JavaScript origins**. For local use, add `http://localhost:5174` and `https://localhost:5173`. Add any HTTPS LAN or deployed app origin you use as well.
+3. Copy the client ID (not a client secret) into `GOOGLE_CLIENT_ID` in `backend/.env` and `VITE_GOOGLE_CLIENT_ID` in `frontend/.env`. The same client ID goes in both files. See the `.env.example` files for their locations.
+4. Restart the backend and frontend. On Render, set both `GOOGLE_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID` to the same value, then redeploy.
+
+The login page shows Google's sign-in button above the email/password form. Google sign-in creates a Streamify account on first use and matches existing accounts by verified email.
+
 ## Open the app on a phone
 
 For login and messaging, connect the phone and computer to the same Wi-Fi network, find the computer's IPv4 address with `ipconfig`, and open `http://<computer-ipv4>:5174` on the phone (for example, `http://192.168.1.20:5174`). The default `npm run dev` command serves HTTP so the phone does not need a development certificate. Allow Node.js through Windows Firewall on a private network if prompted.
