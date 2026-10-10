@@ -120,7 +120,7 @@ const LoginPage = () => {
           <div className="divider my-1 text-xs text-base-content/50">OR</div>
 
           <div className="space-y-2">
-            <div className="flex justify-center">
+            <div className="google-signin-button flex justify-center">
               {googleClientId ? (
                 <GoogleOAuthProvider clientId={googleClientId}>
                   <GoogleLogin
