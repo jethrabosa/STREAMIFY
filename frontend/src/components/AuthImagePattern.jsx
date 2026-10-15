@@ -19,13 +19,13 @@ const AuthImagePattern = ({ title, subtitle, variant }) => {
                   M
                 </div>
                 <div className="max-w-[80%] rounded-2xl rounded-bl-md bg-base-200 px-4 py-3 text-left text-sm text-base-content">
-                  Are we still on for Friday?
+                  Manok Kaba?
                 </div>
               </div>
 
               <div className="flex justify-end">
                 <div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-3 text-left text-sm text-primary-content">
-                  Yes! Booked the table for 7.
+                  Bakit
                 </div>
               </div>
 
@@ -34,13 +34,13 @@ const AuthImagePattern = ({ title, subtitle, variant }) => {
                   M
                 </div>
                 <div className="max-w-[80%] rounded-2xl rounded-bl-md bg-base-200 px-4 py-3 text-left text-sm text-base-content">
-                  Perfect, see you there
+                  kasi mahal kita
                 </div>
               </div>
 
               <div className="flex justify-end">
                 <div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-3 text-left text-sm text-primary-content">
-                  Bringing the photos too
+                  Asan ung manok hahaha
                 </div>
               </div>
 
@@ -52,6 +52,9 @@ const AuthImagePattern = ({ title, subtitle, variant }) => {
                   <span className="size-2 rounded-full bg-primary" />
                   <span className="size-2 rounded-full bg-primary/60" />
                   <span className="size-2 rounded-full bg-primary/30" />
+                </div>
+                <div className="max-w-[70%] rounded-2xl rounded-bl-md bg-base-200 px-4 py-3 text-left text-sm text-base-content">
+                  Kahit chicken mo pa po
                 </div>
               </div>
             </div>
