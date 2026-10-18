@@ -1,18 +1,56 @@
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
+import mongoose from "mongoose";
 
 import cloudinary, { isCloudinaryConfigured } from "../lib/cloudinary.js";
-import { getReceiverSocketId, io } from "../lib/socket.js";
+import { disconnectUserSocket, getReceiverSocketId, io } from "../lib/socket.js";
 
 export const getUsersForSidebar = async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
-    const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
+    const users = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
+    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    const canDeleteUsers = Boolean(adminEmail) && req.user.email.toLowerCase() === adminEmail;
 
-    res.status(200).json(filteredUsers);
+    res.status(200).json({ users, canDeleteUsers });
   } catch (error) {
     console.error("Error in getUsersForSidebar: ", error.message);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const deleteUserAccount = async (req, res) => {
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    if (!adminEmail || req.user.email.toLowerCase() !== adminEmail) {
+      return res.status(403).json({ message: "Only the administrator can delete accounts" });
+    }
+
+    const { id: userId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid account ID" });
+    }
+
+    if (req.user._id.toString() === userId) {
+      return res.status(400).json({ message: "You cannot delete your own account here" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    await Message.deleteMany({
+      $or: [{ senderId: user._id }, { receiverId: user._id }],
+    });
+    await user.deleteOne();
+    disconnectUserSocket(user._id);
+    io.emit("user:deleted", { userId: user._id.toString() });
+
+    res.status(200).json({ message: "Account and chat messages deleted" });
+  } catch (error) {
+    console.error("Error deleting user account:", error.message);
+    res.status(500).json({ message: "Unable to delete account" });
   }
 };
 

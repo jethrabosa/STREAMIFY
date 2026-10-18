@@ -74,14 +74,14 @@ To share the app with people on other Wi-Fi networks, deploy it online. The Rend
 1. Push this project to a GitHub repository. Do not include `.env` files or credentials.
 2. Create a MongoDB Atlas database and database user. In **Network Access**, allow connections from `0.0.0.0/0` so Render can reach the database; protect the database with a strong, unique database password.
 3. In Render, choose **New > Blueprint**, connect the GitHub repository, and apply the `render.yaml` blueprint. The blueprint installs the frontend build dependencies, builds the frontend, and installs the backend production dependencies. Future commits pushed to `main` trigger a redeploy.
-4. When prompted, enter the Atlas connection string for `MONGODB_URI`. Replace `<password>` with the database user's password and include the database name `streamify`. Render generates `JWT_SECRET` automatically.
+4. When prompted, enter the Atlas connection string for `MONGODB_URI`. Replace `<password>` with the database user's password and include the database name `streamify`. Set `ADMIN_EMAIL` to the administrator's sign-in email. Render generates `JWT_SECRET` automatically.
 5. Wait for the Render deployment to finish, then open the `onrender.com` URL shown for the service and share that HTTPS link.
 
 The Render free web-service plan may sleep when unused, so its first request after a quiet period may take longer. Upgrade the service plan if it needs to stay responsive continuously. Profile-photo and chat-image uploads additionally require the Cloudinary environment variables listed above.
 
 ## Environment variables
 
-`backend/.env.example` lists all supported variables. `MONGODB_URI` and `JWT_SECRET` are required. Set a private random value for `JWT_SECRET` before using the app beyond local development.
+`backend/.env.example` lists all supported variables. `MONGODB_URI` and `JWT_SECRET` are required. Set a private random value for `JWT_SECRET` before using the app beyond local development. Set `ADMIN_EMAIL` locally and in Render to the single account allowed to permanently delete other users; right-click a contact on desktop or long-press it on mobile to open the delete action. Deletion also removes that account's chat messages and cannot be undone.
 
 Image uploads use Cloudinary. To enable profile-picture and chat-image uploads, create a Cloudinary account and fill in `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in `backend/.env`. Authentication and text messaging do not require Cloudinary.
 

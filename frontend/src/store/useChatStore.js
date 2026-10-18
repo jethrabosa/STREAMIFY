@@ -6,6 +6,7 @@ import { useAuthStore } from "./useAuthStore";
 export const useChatStore = create((set, get) => ({
   messages: [],
   users: [],
+  canDeleteUsers: false,
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
@@ -14,7 +15,7 @@ export const useChatStore = create((set, get) => ({
     set({ isUsersLoading: true });
     try {
       const res = await axiosInstance.get("/messages/users");
-      set({ users: res.data });
+      set({ users: res.data.users, canDeleteUsers: res.data.canDeleteUsers });
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {
@@ -42,6 +43,26 @@ export const useChatStore = create((set, get) => ({
       toast.error(error.response.data.message);
     }
   },
+
+  deleteUserAccount: async (userId) => {
+    try {
+      await axiosInstance.delete(`/messages/users/${userId}`);
+      get().removeUser(userId);
+      toast.success("Account deleted");
+      return true;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to delete account");
+      return false;
+    }
+  },
+
+  removeUser: (userId) =>
+    set((state) => ({
+      users: state.users.filter((user) => user._id !== userId),
+      ...(state.selectedUser?._id === userId
+        ? { selectedUser: null, messages: [] }
+        : {}),
+    })),
 
   subscribeToMessages: () => {
     const { selectedUser } = get();

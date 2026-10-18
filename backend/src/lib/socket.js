@@ -55,6 +55,18 @@ export function getReceiverSocketId(userId) {
   return userSocketMap[userId];
 }
 
+export function disconnectUserSocket(userId) {
+  const socketId = userSocketMap[userId.toString()];
+  if (!socketId) return;
+
+  const socket = io.sockets.sockets.get(socketId);
+  if (socket) {
+    socket.disconnect(true);
+  } else {
+    delete userSocketMap[userId.toString()];
+  }
+}
+
 // used to store online users
 const userSocketMap = {}; // {userId: socketId}
 
