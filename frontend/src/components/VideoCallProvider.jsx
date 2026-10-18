@@ -457,14 +457,14 @@ const VideoCallProvider = ({ children }) => {
     <VideoCallContext.Provider value={value}>
       {children}
       {call && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-2 sm:p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-0 sm:p-4">
           <section
             role="dialog"
             aria-modal="true"
             aria-label={`Video call with ${call.remoteUser.fullName}`}
-            className="max-h-[calc(100dvh-1rem)] w-full max-w-4xl overflow-y-auto overscroll-contain rounded-2xl bg-base-100 shadow-2xl sm:max-h-[calc(100dvh-2rem)]"
+            className="flex h-[100dvh] w-full max-w-none flex-col overflow-hidden rounded-none bg-base-100 shadow-2xl sm:h-[calc(100dvh-2rem)] sm:max-w-[min(96vw,1600px)] sm:rounded-2xl"
           >
-            <div className="flex items-center justify-between gap-2 border-b border-base-300 px-3 py-3 sm:px-5">
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-base-300 px-3 py-3 sm:px-5">
               <div>
                 <h2 className="font-semibold">{call.remoteUser.fullName}</h2>
                 <p className="text-sm text-base-content/70">
@@ -486,7 +486,7 @@ const VideoCallProvider = ({ children }) => {
               )}
             </div>
 
-            <div className="relative flex aspect-video items-center justify-center bg-neutral-900">
+            <div className="relative flex min-h-0 flex-1 items-center justify-center bg-neutral-900">
               <video
                 ref={remoteVideoRef}
                 autoPlay
@@ -528,7 +528,7 @@ const VideoCallProvider = ({ children }) => {
               )}
             </div>
 
-            <div className="flex justify-center gap-4 p-4">
+            <div className="flex shrink-0 justify-center gap-4 p-4">
               {call.status === "incoming" ? (
                 <>
                   <button
