@@ -1,6 +1,10 @@
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
-import { Send } from "lucide-react";
+import { useCallSettingsStore } from "../store/useCallSettingsStore";
+import { RINGTONES } from "../constants/ringtones";
+import { playRingtone } from "../lib/ringtone";
+import { Send, Volume2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 const PREVIEW_MESSAGES = [
   { id: 1, content: "Hey! How's it going?", isSent: false },
@@ -9,10 +13,64 @@ const PREVIEW_MESSAGES = [
 
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
+  const ringtone = useCallSettingsStore((state) => state.ringtone);
+  const setRingtone = useCallSettingsStore((state) => state.setRingtone);
+  const previewStopRef = useRef(null);
+  const previewTimeoutRef = useRef(null);
+
+  const previewRingtone = () => {
+    previewStopRef.current?.();
+    window.clearTimeout(previewTimeoutRef.current);
+    const stop = playRingtone(ringtone);
+    previewStopRef.current = stop;
+    previewTimeoutRef.current = window.setTimeout(() => {
+      stop();
+      previewStopRef.current = null;
+    }, RINGTONES[ringtone].pattern.reduce((total, duration) => total + duration, 0));
+  };
+
+  useEffect(
+    () => () => {
+      previewStopRef.current?.();
+      window.clearTimeout(previewTimeoutRef.current);
+    },
+    []
+  );
 
   return (
     <div className="container mx-auto min-h-[100dvh] max-w-5xl px-4 pb-8 pt-20">
       <div className="space-y-6">
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold">Call ringtone</h2>
+            <p className="text-sm text-base-content/70">
+              Choose and preview the sound for incoming and outgoing calls. This setting is saved on this device.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              className="select select-bordered w-full max-w-xs"
+              value={ringtone}
+              onChange={(event) => setRingtone(event.target.value)}
+              aria-label="Call ringtone"
+            >
+              {Object.entries(RINGTONES).map(([value, option]) => (
+                <option key={value} value={value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={previewRingtone}
+            >
+              <Volume2 size={18} />
+              Preview
+            </button>
+          </div>
+        </section>
+
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-semibold">Theme</h2>
           <p className="text-sm text-base-content/70">Choose a theme for your chat interface</p>

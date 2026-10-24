@@ -3,7 +3,9 @@ import toast from "react-hot-toast";
 import { Mic, MicOff, Phone, PhoneOff, Video, VideoOff } from "lucide-react";
 import { VideoCallContext } from "../contexts/VideoCallContext";
 import { axiosInstance } from "../lib/axios";
+import { playRingtone } from "../lib/ringtone";
 import { useAuthStore } from "../store/useAuthStore";
+import { useCallSettingsStore } from "../store/useCallSettingsStore";
 import { useChatStore } from "../store/useChatStore";
 
 const getRtcConfiguration = async () => {
@@ -63,6 +65,7 @@ const VideoCallProvider = ({ children }) => {
   const socket = useAuthStore((state) => state.socket);
   const onlineUsers = useAuthStore((state) => state.onlineUsers);
   const users = useChatStore((state) => state.users);
+  const ringtone = useCallSettingsStore((state) => state.ringtone);
   const [call, setCall] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
@@ -80,60 +83,8 @@ const VideoCallProvider = ({ children }) => {
 
   useEffect(() => {
     if (!call || !["calling", "incoming"].includes(call.status)) return undefined;
-
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return undefined;
-
-    const audioContext = new AudioContextClass();
-    const gain = audioContext.createGain();
-    const oscillators = [440, 480].map((frequency) => {
-      const oscillator = audioContext.createOscillator();
-      oscillator.frequency.value = frequency;
-      oscillator.connect(gain);
-      oscillator.start();
-      return oscillator;
-    });
-    gain.gain.value = 0;
-    gain.connect(audioContext.destination);
-
-    let intervalId;
-    let isDisposed = false;
-    const scheduleRing = () => {
-      if (isDisposed || audioContext.state !== "running") return;
-      const now = audioContext.currentTime;
-      gain.gain.cancelScheduledValues(now);
-      gain.gain.setValueAtTime(0, now);
-      gain.gain.setValueAtTime(0.08, now + 0.05);
-      gain.gain.setValueAtTime(0.08, now + 0.4);
-      gain.gain.setValueAtTime(0, now + 0.45);
-      gain.gain.setValueAtTime(0.08, now + 0.65);
-      gain.gain.setValueAtTime(0.08, now + 1);
-      gain.gain.setValueAtTime(0, now + 1.05);
-    };
-
-    audioContext.resume().then(
-      () => {
-        if (isDisposed) return;
-        scheduleRing();
-        intervalId = window.setInterval(scheduleRing, 2000);
-      },
-      (error) => {
-        console.warn("Unable to play the call ringtone:", error);
-      }
-    );
-
-    return () => {
-      isDisposed = true;
-      window.clearInterval(intervalId);
-      const stopAt = audioContext.currentTime + 0.05;
-      gain.gain.cancelScheduledValues(audioContext.currentTime);
-      gain.gain.setValueAtTime(0, stopAt);
-      oscillators.forEach((oscillator) => oscillator.stop(stopAt));
-      audioContext.close().catch((error) => {
-        console.warn("Unable to close the call ringtone audio:", error);
-      });
-    };
-  }, [call]);
+    return playRingtone(ringtone);
+  }, [call, ringtone]);
 
   useEffect(() => {
     if (!hasCall || !("wakeLock" in navigator)) return undefined;
