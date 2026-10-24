@@ -75,7 +75,7 @@ To share the app with people on other Wi-Fi networks, deploy it online. The Rend
 2. Create a MongoDB Atlas database and database user. In **Network Access**, allow connections from `0.0.0.0/0` so Render can reach the database; protect the database with a strong, unique database password.
 3. In Render, choose **New > Blueprint**, connect the GitHub repository, and apply the `render.yaml` blueprint. The blueprint installs the frontend build dependencies, builds the frontend, and installs the backend production dependencies. Future commits pushed to `main` trigger a redeploy.
 4. When prompted, enter the Atlas connection string for `MONGODB_URI`. Replace `<password>` with the database user's password and include the database name `streamify`. Set `ADMIN_EMAIL` to the administrator's sign-in email. Render generates `JWT_SECRET` automatically.
-5. If video calls must work across mobile data, hotspots, and restrictive Wi-Fi, set the TURN environment variables described in [Video calls](#video-calls) in the Render service before deploying (or redeploy after setting them).
+5. To enable TURN relay for calls across mobile data, hotspots, and restrictive Wi-Fi, set `METERED_APP_NAME` and `METERED_API_KEY` in the Render service as described in [Video calls](#video-calls).
 6. Wait for the Render deployment to finish, then open the `onrender.com` URL shown for the service and share that HTTPS link. Do not share a `localhost` or private LAN address; those only work on your own device or local network.
 
 The Render free web-service plan may sleep when unused, so its first request after a quiet period may take longer. Upgrade the service plan if it needs to stay responsive continuously. Profile-photo and chat-image uploads additionally require the Cloudinary environment variables listed above.
@@ -88,15 +88,16 @@ Image uploads use Cloudinary. To enable profile-picture and chat-image uploads, 
 
 ## Video calls
 
-Open a chat and select the camera button to call an online user. Both participants must allow camera and microphone access. Browsers allow camera access on `localhost` during development; when deployed, the site must use HTTPS. Calls use WebRTC with a public STUN server, which is sufficient on many networks. Mobile carriers, hotspots, and restrictive Wi-Fi can block direct peer-to-peer connections; those networks require a TURN relay. For the best chance on restrictive networks, choose a TURN provider that supports TLS/TCP on port 443 and configure its values in the frontend build environment:
+Open a chat and select the camera button to call an online user. Both participants must allow camera and microphone access. Browsers allow camera access on `localhost` during development; when deployed, the site must use HTTPS. Calls use WebRTC with a public STUN server, which is sufficient on many networks. Mobile carriers, hotspots, and restrictive Wi-Fi can block direct peer-to-peer connections; those networks need a TURN relay.
 
-```env
-VITE_TURN_URLS=turn:turn.example.com:3478?transport=udp,turns:turn.example.com:5349?transport=tcp
-VITE_TURN_USERNAME=your-turn-username
-VITE_TURN_CREDENTIAL=your-turn-credential
-```
+This app can retrieve Metered TURN credentials securely through the backend:
 
-For Render, add these three variables to the service's environment; the Render blueprint declares them as optional settings. Restart the frontend dev server or rebuild/redeploy after changing them because `VITE_` settings are embedded in the browser build. Use provider-issued short-lived TURN credentials; TURN credentials are visible to users of the app and must not be long-lived account secrets. A TURN relay improves connectivity but cannot guarantee calls on every network or when the relay itself is blocked or unavailable. The app also requests a screen wake lock during calls on supported browsers to reduce interruptions from the phone locking, but browser and operating-system behavior can still suspend calls when switching apps or losing network connectivity.
+1. Create a Metered TURN app (for example, `streamify-calls`) and select a plan. The free trial shown by Metered includes 500 MB per month.
+2. In the Metered dashboard, open **Developers** and copy the API key for this app. Keep it secret.
+3. In Render, open the `streamify-chat` service's **Environment** settings and add `METERED_APP_NAME` with the app name (without `.metered.live`) and `METERED_API_KEY` with the API key. The Render blueprint declares both as optional environment variables.
+4. Save and deploy. The backend retrieves TURN server URLs and temporary credentials from Metered when a signed-in user starts or answers a call. The Metered API key stays on the server and is not included in the frontend build.
+
+Do not add the Metered API key to a `VITE_` variable or share it publicly. A TURN relay improves connectivity but cannot guarantee calls on every network or when the relay itself is blocked or unavailable. Monitor usage in Metered; exceeding the free quota may stop relay service. The app also requests a screen wake lock during calls on supported browsers to reduce interruptions from the phone locking, but browser and operating-system behavior can still suspend calls when switching apps or losing network connectivity.
 
 ## Production build
 

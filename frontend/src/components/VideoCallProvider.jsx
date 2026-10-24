@@ -2,30 +2,22 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Mic, MicOff, Phone, PhoneOff, Video, VideoOff } from "lucide-react";
 import { VideoCallContext } from "../contexts/VideoCallContext";
+import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 
-const turnUrls = (import.meta.env.VITE_TURN_URLS || "")
-  .split(",")
-  .map((url) => url.trim())
-  .filter(Boolean);
-const turnUsername = import.meta.env.VITE_TURN_USERNAME;
-const turnCredential = import.meta.env.VITE_TURN_CREDENTIAL;
-const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
-
-if (turnUrls.length && turnUsername && turnCredential) {
-  iceServers.push({
-    urls: turnUrls,
-    username: turnUsername,
-    credential: turnCredential,
-  });
-} else if (turnUrls.length || turnUsername || turnCredential) {
-  console.warn(
-    "TURN is only enabled when VITE_TURN_URLS, VITE_TURN_USERNAME, and VITE_TURN_CREDENTIAL are all configured."
-  );
-}
-
-const rtcConfiguration = { iceServers };
+const getRtcConfiguration = async () => {
+  const response = await axiosInstance.get("/turn/credentials");
+  if (!Array.isArray(response.data?.iceServers)) {
+    throw new Error("The TURN relay returned invalid configuration.");
+  }
+  return {
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      ...response.data.iceServers,
+    ],
+  };
+};
 
 const getMediaAccessError = (error) => {
   if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
@@ -49,6 +41,14 @@ const getMediaAccessError = (error) => {
     default:
       return "Could not access the camera or microphone. Check browser permissions and try again.";
   }
+};
+
+const getCallSetupError = (error) => {
+  if (error.response?.data?.message) return error.response.data.message;
+  if (error.name === "Error" || error.name === "AxiosError") {
+    return error.message;
+  }
+  return getMediaAccessError(error);
 };
 
 const VideoCallProvider = ({ children }) => {
@@ -163,7 +163,7 @@ const VideoCallProvider = ({ children }) => {
   }, []);
 
   const createPeerConnection = useCallback(
-    (remoteUserId) => {
+    (remoteUserId, rtcConfiguration) => {
       const peerConnection = new RTCPeerConnection(rtcConfiguration);
       peerConnectionRef.current = peerConnection;
 
@@ -214,6 +214,7 @@ const VideoCallProvider = ({ children }) => {
 
       updateCall({ status: "calling", remoteUser });
       try {
+        const rtcConfiguration = await getRtcConfiguration();
         if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
           throw new DOMException("Camera and microphone require a secure context.", "SecurityError");
         }
@@ -224,7 +225,7 @@ const VideoCallProvider = ({ children }) => {
         localStreamRef.current = stream;
         setLocalStream(stream);
 
-        const peerConnection = createPeerConnection(remoteUser._id);
+        const peerConnection = createPeerConnection(remoteUser._id, rtcConfiguration);
         stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
@@ -234,7 +235,7 @@ const VideoCallProvider = ({ children }) => {
         });
       } catch (error) {
         console.error("Unable to start video call:", error);
-        toast.error(getMediaAccessError(error));
+        toast.error(getCallSetupError(error));
         cleanupCall();
       }
     },
@@ -247,6 +248,7 @@ const VideoCallProvider = ({ children }) => {
 
     updateCall({ ...incomingCall, status: "connecting" });
     try {
+      const rtcConfiguration = await getRtcConfiguration();
       if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
         throw new DOMException("Camera and microphone require a secure context.", "SecurityError");
       }
@@ -257,7 +259,10 @@ const VideoCallProvider = ({ children }) => {
       localStreamRef.current = stream;
       setLocalStream(stream);
 
-      const peerConnection = createPeerConnection(incomingCall.remoteUser._id);
+      const peerConnection = createPeerConnection(
+        incomingCall.remoteUser._id,
+        rtcConfiguration
+      );
       stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
       await peerConnection.setRemoteDescription(
         new RTCSessionDescription(incomingCall.offer)
@@ -271,7 +276,7 @@ const VideoCallProvider = ({ children }) => {
       });
     } catch (error) {
       console.error("Unable to accept video call:", error);
-      toast.error(getMediaAccessError(error));
+      toast.error(getCallSetupError(error));
       cleanupCall(true, "call:decline");
     }
   }, [cleanupCall, createPeerConnection, flushPendingCandidates, socket, updateCall]);

@@ -9,6 +9,7 @@ import { connectDB } from "./lib/db.js";
 
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
+import turnRoutes from "./routes/turn.route.js";
 import { app, isAllowedClientOrigin, server } from "./lib/socket.js";
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.use(
 
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/turn", turnRoutes);
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok" });

@@ -19,9 +19,7 @@ services:
         sync: false
       - key: VITE_GOOGLE_CLIENT_ID
         sync: false
-      - key: VITE_TURN_URLS
+      - key: METERED_APP_NAME
         sync: false
-      - key: VITE_TURN_USERNAME
-        sync: false
-      - key: VITE_TURN_CREDENTIAL
+      - key: METERED_API_KEY
         sync: false
