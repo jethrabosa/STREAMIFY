@@ -21,9 +21,6 @@ const getRtcConfiguration = async () => {
     };
   } catch (error) {
     console.error("Unable to retrieve TURN credentials; trying direct connection:", error);
-    toast(
-      "TURN relay unavailable. Trying a direct connection; restrictive networks may still block the call."
-    );
     return {
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     };
