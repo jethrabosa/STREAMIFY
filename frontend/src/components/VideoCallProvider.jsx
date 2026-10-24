@@ -82,6 +82,63 @@ const VideoCallProvider = ({ children }) => {
   const hasCall = Boolean(call);
 
   useEffect(() => {
+    if (!call || !["calling", "incoming"].includes(call.status)) return undefined;
+
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return undefined;
+
+    const audioContext = new AudioContextClass();
+    const gain = audioContext.createGain();
+    const oscillators = [440, 480].map((frequency) => {
+      const oscillator = audioContext.createOscillator();
+      oscillator.frequency.value = frequency;
+      oscillator.connect(gain);
+      oscillator.start();
+      return oscillator;
+    });
+    gain.gain.value = 0;
+    gain.connect(audioContext.destination);
+
+    let intervalId;
+    let isDisposed = false;
+    const scheduleRing = () => {
+      if (isDisposed || audioContext.state !== "running") return;
+      const now = audioContext.currentTime;
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.setValueAtTime(0.08, now + 0.05);
+      gain.gain.setValueAtTime(0.08, now + 0.4);
+      gain.gain.setValueAtTime(0, now + 0.45);
+      gain.gain.setValueAtTime(0.08, now + 0.65);
+      gain.gain.setValueAtTime(0.08, now + 1);
+      gain.gain.setValueAtTime(0, now + 1.05);
+    };
+
+    audioContext.resume().then(
+      () => {
+        if (isDisposed) return;
+        scheduleRing();
+        intervalId = window.setInterval(scheduleRing, 2000);
+      },
+      (error) => {
+        console.warn("Unable to play the call ringtone:", error);
+      }
+    );
+
+    return () => {
+      isDisposed = true;
+      window.clearInterval(intervalId);
+      const stopAt = audioContext.currentTime + 0.05;
+      gain.gain.cancelScheduledValues(audioContext.currentTime);
+      gain.gain.setValueAtTime(0, stopAt);
+      oscillators.forEach((oscillator) => oscillator.stop(stopAt));
+      audioContext.close().catch((error) => {
+        console.warn("Unable to close the call ringtone audio:", error);
+      });
+    };
+  }, [call]);
+
+  useEffect(() => {
     if (!hasCall || !("wakeLock" in navigator)) return undefined;
 
     let wakeLock = null;
