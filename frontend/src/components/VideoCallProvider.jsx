@@ -7,16 +7,27 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 
 const getRtcConfiguration = async () => {
-  const response = await axiosInstance.get("/turn/credentials");
-  if (!Array.isArray(response.data?.iceServers)) {
-    throw new Error("The TURN relay returned invalid configuration.");
+  try {
+    const response = await axiosInstance.get("/turn/credentials");
+    if (!Array.isArray(response.data?.iceServers)) {
+      throw new Error("The TURN relay returned invalid configuration.");
+    }
+
+    return {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        ...response.data.iceServers,
+      ],
+    };
+  } catch (error) {
+    console.error("Unable to retrieve TURN credentials; trying direct connection:", error);
+    toast(
+      "TURN relay unavailable. Trying a direct connection; restrictive networks may still block the call."
+    );
+    return {
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    };
   }
-  return {
-    iceServers: [
-      { urls: "stun:stun.l.google.com:19302" },
-      ...response.data.iceServers,
-    ],
-  };
 };
 
 const getMediaAccessError = (error) => {
