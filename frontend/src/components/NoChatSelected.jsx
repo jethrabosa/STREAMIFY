@@ -1,26 +1,27 @@
-import { MessageSquare } from "lucide-react";
+import { ArrowLeftRight, MessageCircle, Sparkles } from "lucide-react";
 
 const NoChatSelected = () => {
   return (
-    <div className="hidden w-full flex-1 flex-col items-center justify-center bg-base-100/50 p-16 lg:flex">
-      <div className="max-w-md text-center space-y-6">
-        {/* Icon Display */}
-        <div className="flex justify-center gap-4 mb-4">
-          <div className="relative">
-            <div
-              className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center
-             justify-center animate-bounce"
-            >
-              <MessageSquare className="w-8 h-8 text-primary " />
-            </div>
+    <div className="empty-chat-panel dashboard-empty-panel hidden w-full flex-1 flex-col items-center justify-center p-8 sm:p-12 lg:flex">
+      <div className="dashboard-empty-content">
+        <div className="dashboard-empty-art" aria-hidden="true">
+          <div className="dashboard-empty-sparkle"><Sparkles className="size-4" /></div>
+          <div className="dashboard-empty-bubble dashboard-empty-bubble-back">
+            <span />
+            <span />
+            <span />
           </div>
+          <div className="dashboard-empty-bubble dashboard-empty-bubble-front">
+            <MessageCircle className="size-8" />
+          </div>
+          <div className="dashboard-empty-swap"><ArrowLeftRight className="size-4" /></div>
         </div>
 
-        {/* Welcome Text */}
-        <h2 className="text-2xl font-bold">Welcome to Chatty!</h2>
-        <p className="text-base-content/60">
-          Select a conversation from the sidebar to start chatting
-        </p>
+        <div className="dashboard-empty-copy">
+          <span>YOUR MESSAGES, YOUR PEOPLE</span>
+          <h2>Your next good conversation starts here.</h2>
+          <p>Choose someone from your contacts and catch up, share a moment, or just say hello.</p>
+        </div>
       </div>
     </div>
   );
